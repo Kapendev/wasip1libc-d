@@ -1,0 +1,17 @@
+#!/bin/env sh
+
+set -e
+cd "$(dirname "$0")"
+
+betterC='F'
+[ "$1" = '-betterC' ] && betterC='T'
+
+if [ "$betterC" = 'T' ]; then
+    ldc2 --mtriple=wasm32-wasip1 -betterC -i -c wasip1libc.d
+    ldc2 --mtriple=wasm32-wasip1 -betterC -i -link-internally index.d wasip1libc.o
+else
+    ldc2 --mtriple=wasm32-wasip1 -c wasip1libc.d
+    ldc2 --mtriple=wasm32-wasip1 -link-internally index.d wasip1libc.o
+fi
+
+rm -f *.o
