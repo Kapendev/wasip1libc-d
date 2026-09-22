@@ -6,7 +6,7 @@ browser host for the [D programming language](https://dlang.org/).
 ## Quick Start
 
 First, install [LDC](https://github.com/ldc-developers/ldc) and
-the WASI Preview 1 addon package (can be found in the LDC releases on GitHub).
+the WASI Preview 1 addon package (that can be found in the LDC releases on GitHub).
 
 To build, run:
 
