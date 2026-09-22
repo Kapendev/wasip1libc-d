@@ -54,12 +54,14 @@ private {
             immutable(char)[] a, b;
         }
 
-        int llvm_wasm_memory_size(int) {
-            return 0;
-        }
+        @trusted nothrow @nogc {
+            int llvm_wasm_memory_size(int) {
+                return 0;
+            }
 
-        int llvm_wasm_memory_grow(int, int) {
-            return -1;
+            int llvm_wasm_memory_grow(int, int) {
+                return -1;
+            }
         }
     }
 
