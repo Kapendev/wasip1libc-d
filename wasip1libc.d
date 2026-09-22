@@ -1,18 +1,19 @@
 module wasip1libc;
 
-extern(C) __gshared WasmArena wasmArena;
-extern(C) __gshared int errno;
-extern(C) __gshared void* stdout = cast(void*) fdstdout;
-extern(C) __gshared void* stderr = cast(void*) fdstderr;
-extern(C) __gshared int _CLOCK_MONOTONIC = 1;
-extern(C) __gshared int _CLOCK_REALTIME = 0;
+extern(C) __gshared {
+    WasmArena wasmArena;
+    int errno;
+    void* stdout = cast(void*) fdstdout;
+    void* stderr = cast(void*) fdstderr;
+    int _CLOCK_MONOTONIC = 1;
+    int _CLOCK_REALTIME = 0;
+}
 
 alias pthread_t           = size_t;
 alias pthread_mutex_t     = void*;
 alias pthread_cond_t      = void*;
 alias pthread_mutexattr_t = void*;
 alias pthread_condattr_t  = void*;
-
 alias defaultWarenaMemcpy = memcpy;
 
 enum defaultWarenaPageSize  = cast(size_t) (1U << 16U);
@@ -64,13 +65,14 @@ private {
 
     enum wasi = llvmAttr("wasm-import-module", "wasi_snapshot_preview1");
 
-    llvmAttr importName(immutable(char)[] name) {
-        return llvmAttr("wasm-import-name", name);
-    }
+    @trusted nothrow @nogc {
+        llvmAttr importName(immutable(char)[] name) {
+            return llvmAttr("wasm-import-name", name);
+        }
 
-    @system nothrow @nogc
-    void* heapBasePtr() {
-        return &__heap_base;
+        void* heapBasePtr() {
+            return &__heap_base;
+        }
     }
 }
 
@@ -174,7 +176,8 @@ struct tm {
 
 struct FILE;
 
-extern(C) nothrow @nogc:
+// @--
+extern(C) @system nothrow @nogc:
 
 void _start() {
     version (D_BetterC) {

@@ -17,11 +17,11 @@ cd wasip1libc-d
 # Or: .\build.bat
 ```
 
-After that you need to serve the folder and open `index.html`.
-Example:
+Then you need to serve the folder and open `index.html`:
 
 ```
 python3 -m http.server 8080
+# Or: php -S localhost:8080
 ```
 
 ## Notes

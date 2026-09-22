@@ -1,17 +1,29 @@
 #!/bin/env sh
 
-set -e
+# --- Available Flags
+betterc='F' # Use the `-betterC` flag.
+libc='F'    # Use wasi-libc instead of the wasip1libc module.
+
+
+set -eu
 cd "$(dirname "$0")"
+for arg in "$@"; do
+    [ "$arg" = '-betterc' ] && betterc='T' && continue
+    [ "$arg" = '-libc' ] && libc='T' && continue
 
-betterC='F'
-[ "$1" = '-betterC' ] && betterC='T'
+    flag_count=3
+    tail -n +3 "$0" | head -n $flag_count
+    exit 1
+done
 
-if [ "$betterC" = 'T' ]; then
-    ldc2 --mtriple=wasm32-wasip1 -betterC -i -c wasip1libc.d
-    ldc2 --mtriple=wasm32-wasip1 -betterC -i -link-internally index.d wasip1libc.o
+dflags='-i'
+[ "$betterc" = 'T' ] && dflags="$dflags -betterC"
+
+if [ "$libc" = 'T' ]; then
+    ldc2 --mtriple=wasm32-wasip1 $dflags index.d
 else
-    ldc2 --mtriple=wasm32-wasip1 -c wasip1libc.d
-    ldc2 --mtriple=wasm32-wasip1 -link-internally index.d wasip1libc.o
+    ldc2 --mtriple=wasm32-wasip1 $dflags -c wasip1libc.d
+    ldc2 --mtriple=wasm32-wasip1 $dflags -link-internally index.d wasip1libc.o
 fi
 
 rm -f *.o
