@@ -9,11 +9,18 @@ extern(C) __gshared {
     int _CLOCK_REALTIME = 0;
 }
 
+// No idea why I'm adding attributes, but it is what it is.
+// They do nothing here. Think about it. Think.
+extern(C) @trusted nothrow @nogc {
+    alias QsortCompFunc = int function(const(void)* a, const(void)* b);
+}
+
 alias pthread_t           = size_t;
 alias pthread_mutex_t     = void*;
 alias pthread_cond_t      = void*;
 alias pthread_mutexattr_t = void*;
 alias pthread_condattr_t  = void*;
+
 alias defaultWarenaMemcpy = memcpy;
 
 enum defaultWarenaPageSize  = cast(size_t) (1U << 16U);
@@ -207,6 +214,34 @@ int memcmp(const(void)* s1, const(void)* s2, size_t count) {
     auto p2 = cast(const(ubyte)*) s2;
     foreach (i; 0 .. count) if (p1[i] != p2[i]) return p1[i] - p2[i];
     return 0;
+}
+
+void qsort(void* ptr, size_t count, size_t size, QsortCompFunc comp) {
+    if (ptr == null || comp == null) return;
+    qsortRange(cast(ubyte*) ptr, count, size, comp);
+}
+
+void qsortRange(ubyte* ptr, size_t count, size_t size, QsortCompFunc comp) {
+    if (count < 2 || size == 0) return;
+
+    auto pivot = ptr + (count / 2) * size;
+    foreach (k; 0 .. size) { auto t = ptr[k]; ptr[k] = pivot[k]; pivot[k] = t; }
+    pivot = ptr;
+
+    size_t i = 1;
+    foreach (j; 1 .. count) {
+        auto elem = ptr + j * size;
+        if (comp(elem, pivot) < 0) {
+            auto dest = ptr + i * size;
+            foreach (k; 0 .. size) { auto t = dest[k]; dest[k] = elem[k]; elem[k] = t; }
+            i += 1;
+        }
+    }
+    auto last = ptr + (i - 1) * size;
+    foreach (k; 0 .. size) { auto t = pivot[k]; pivot[k] = last[k]; last[k] = t; }
+
+    qsortRange(ptr, i - 1, size, comp);
+    qsortRange(ptr + i * size, count - i, size, comp);
 }
 
 int fputc(int character, FILE* stream) {

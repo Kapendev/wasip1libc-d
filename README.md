@@ -6,20 +6,21 @@ browser host for the [D programming language](https://dlang.org/).
 ## Quick Start
 
 First, install [LDC](https://github.com/ldc-developers/ldc) and
-the WASI Preview 1 addon package (that can be found in the LDC releases on GitHub).
+the [WASI Preview 1 addon](https://github.com/ldc-developers/ldc/releases) for LDC.
+The addon can be ignored if the `-betterC` flag is supported by the target project.
 
-To build, run:
+To install wasip1libc and build a Wasm file, run:
 
 ```sh
 git clone --depth 1 https://github.com/Kapendev/wasip1libc-d
 cd wasip1libc-d
 ./build
-# Or: .\build.bat
+# Or: ./build -betterc
 ```
 
-Then you need to serve the folder and open `index.html`:
+To test the Wasm file, serve the folder with:
 
-```
+```sh
 python3 -m http.server 8080
 # Or: php -S localhost:8080
 ```
