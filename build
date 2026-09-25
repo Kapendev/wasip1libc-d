@@ -16,7 +16,7 @@ for arg in "$@"; do
     exit 1
 done
 
-dflags='-i'
+dflags='-i --d-version=WASI_EMULATED_MMAN'
 [ "$betterc" = 'T' ] && dflags="$dflags -betterC"
 
 if [ "$libc" = 'T' ]; then

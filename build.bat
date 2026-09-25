@@ -17,7 +17,7 @@ for %%A in (%*) do (
   )
 )
 
-set dflags=-i
+set "dflags=-i --d-version=WASI_EMULATED_MMAN"
 if "%betterc%"=="T" set dflags=%dflags% -betterC
 
 if "%libc%"=="T" (
