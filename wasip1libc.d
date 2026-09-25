@@ -473,6 +473,25 @@ void* realloc(void* ptr, size_t size) {
 
 void free(void* ptr) {}
 
+void* mmap(void* addr, size_t length, int prot, int flags, int fd, long offset) {
+    enum MAP_ANON = 32;
+    enum ENODEV = 43;
+    enum ENOMEM = 48;
+    enum EINVAL = 28;
+
+    if (length == 0) { errno = EINVAL; return cast(void*) -1; }
+    if (fd != -1 || (flags & MAP_ANON) == 0) { errno = ENODEV; return cast(void*) -1; }
+
+    auto result = wasmArena.malloc(defaultWarenaPageSize, length);
+    if (result == null) { errno = ENOMEM; return cast(void*) -1; }
+    memset(result, 0, length);
+    return result;
+}
+
+int munmap(void* addr, size_t length) {
+    return 0;
+}
+
 int fclose(void* stream) {
     return 0;
 }
@@ -603,17 +622,18 @@ char* getenv(const(char)* name) {
     return null;
 }
 
-int clock_gettime(int clk, timespec* tp) {
+// The clock id is a pointer (`&_CLOCK_MONOTONIC`), like in wasi-libc.
+int clock_gettime(const(int)* clk, timespec* tp) {
     ulong nanos = void;
-    if (clock_time_get(clk, 1, &nanos) != 0) return -1;
+    if (clock_time_get(*clk, 1, &nanos) != 0) return -1;
     tp.tv_sec  = cast(long) (nanos / 1_000_000_000UL);
     tp.tv_nsec = cast(long) (nanos % 1_000_000_000UL);
     return 0;
 }
 
-int clock_getres(int clk, timespec* res) {
+int clock_getres(const(int)* clk, timespec* res) {
     ulong resNanos = void;
-    if (clock_res_get(clk, &resNanos) != 0) return -1;
+    if (clock_res_get(*clk, &resNanos) != 0) return -1;
     res.tv_sec  = cast(long) (resNanos / 1_000_000_000UL);
     res.tv_nsec = cast(long) (resNanos % 1_000_000_000UL);
     return 0;
@@ -625,6 +645,8 @@ tm* localtime_r(const(timespec)* timep, tm* result) {
 }
 
 int sysconf(int name) {
+    enum _SC_PAGESIZE = 30;
+    if (name == _SC_PAGESIZE) return defaultWarenaPageSize;
     return -1;
 }
 
@@ -1717,6 +1739,52 @@ float tanhf(float x) {
     return cast(float) tanh(x);
 }
 
+// log(1 + u) without losing precision for small u (Kahan's trick).
+private double log1pPrecise(double u) {
+    double w = 1 + u;
+    if (w == 1) return u;
+    return log(w) * (u / (w - 1));
+}
+
+// Inverse hyperbolic functions. Invalid inputs return -NaN, like glibc.
+double asinh(double x) {
+    double a = fabs(x);
+    if (a != a || a == double.infinity) return x;
+    double r = a > 0x1p28
+        ? log(a) + 0.6931471805599453 // sqrt(a*a + 1) == a here, and a*a could overflow
+        : log1pPrecise(a + a * a / (1 + sqrt(1 + a * a)));
+    return copysign(r, x);
+}
+
+float asinhf(float x) {
+    return cast(float) asinh(x);
+}
+
+double acosh(double x) {
+    if (x != x) return x;
+    if (x < 1) return -double.nan;
+    if (x == double.infinity) return x;
+    if (x > 0x1p28) return log(x) + 0.6931471805599453;
+    double t = x - 1;
+    return log1pPrecise(t + sqrt(t * (t + 2)));
+}
+
+float acoshf(float x) {
+    return cast(float) acosh(x);
+}
+
+double atanh(double x) {
+    double a = fabs(x);
+    if (a != a) return x;
+    if (a > 1) return -double.nan;
+    if (a == 1) return copysign(double.infinity, x);
+    return copysign(0.5 * log1pPrecise(2 * a / (1 - a)), x);
+}
+
+float atanhf(float x) {
+    return cast(float) atanh(x);
+}
+
 void roundl(F128* result, ulong aLo, ulong aHi) {
     *result = doubleToF128(round(f128ToDouble(aLo, aHi)));
 }
@@ -1755,6 +1823,116 @@ void expl(F128* result, ulong aLo, ulong aHi) {
 
 void fabsl(F128* result, ulong aLo, ulong aHi) {
     *result = doubleToF128(fabs(f128ToDouble(aLo, aHi)));
+}
+
+void sqrtl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(sqrt(f128ToDouble(aLo, aHi)));
+}
+
+void truncl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(trunc(f128ToDouble(aLo, aHi)));
+}
+
+void rintl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(rint(f128ToDouble(aLo, aHi)));
+}
+
+void asinl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(asin(f128ToDouble(aLo, aHi)));
+}
+
+void acosl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(acos(f128ToDouble(aLo, aHi)));
+}
+
+void log2l(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(log2(f128ToDouble(aLo, aHi)));
+}
+
+void log10l(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(log10(f128ToDouble(aLo, aHi)));
+}
+
+void exp2l(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(exp2(f128ToDouble(aLo, aHi)));
+}
+
+void cbrtl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(cbrt(f128ToDouble(aLo, aHi)));
+}
+
+void sinhl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(sinh(f128ToDouble(aLo, aHi)));
+}
+
+void coshl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(cosh(f128ToDouble(aLo, aHi)));
+}
+
+void tanhl(F128* result, ulong aLo, ulong aHi) {
+    *result = doubleToF128(tanh(f128ToDouble(aLo, aHi)));
+}
+
+void powl(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(pow(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void atan2l(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(atan2(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void fmodl(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(fmod(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void remainderl(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(remainder(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void hypotl(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(hypot(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void copysignl(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(copysign(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void fminl(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(fmin(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void fmaxl(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi) {
+    *result = doubleToF128(fmax(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi)));
+}
+
+void fmal(F128* result, ulong aLo, ulong aHi, ulong bLo, ulong bHi, ulong cLo, ulong cHi) {
+    *result = doubleToF128(fma(f128ToDouble(aLo, aHi), f128ToDouble(bLo, bHi), f128ToDouble(cLo, cHi)));
+}
+
+void ldexpl(F128* result, ulong aLo, ulong aHi, int n) {
+    *result = doubleToF128(ldexp(f128ToDouble(aLo, aHi), n));
+}
+
+void scalbnl(F128* result, ulong aLo, ulong aHi, int n) {
+    *result = doubleToF128(scalbn(f128ToDouble(aLo, aHi), n));
+}
+
+void frexpl(F128* result, ulong aLo, ulong aHi, int* exp) {
+    *result = doubleToF128(frexp(f128ToDouble(aLo, aHi), exp));
+}
+
+void modfl(F128* result, ulong aLo, ulong aHi, F128* iptr) {
+    double ip = void;
+    *result = doubleToF128(modf(f128ToDouble(aLo, aHi), &ip));
+    *iptr = doubleToF128(ip);
+}
+
+long llroundl(ulong aLo, ulong aHi) {
+    return llround(f128ToDouble(aLo, aHi));
+}
+
+long llrintl(ulong aLo, ulong aHi) {
+    return llrint(f128ToDouble(aLo, aHi));
 }
 
 @wasi @importName("fd_write")
@@ -1933,4 +2111,12 @@ long __fixunstfdi(ulong aLo, ulong aHi) {
 
 void __extendsftf2(F128* result, float a) {
     *result = doubleToF128(cast(double) a);
+}
+
+float __trunctfsf2(ulong aLo, ulong aHi) {
+    return cast(float) f128ToDouble(aLo, aHi);
+}
+
+uint __fixunstfsi(ulong aLo, ulong aHi) {
+    return cast(uint) f128ToDouble(aLo, aHi);
 }
