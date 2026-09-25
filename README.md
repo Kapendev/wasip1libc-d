@@ -21,13 +21,16 @@ cd wasip1libc-d
 To test the Wasm file, serve the folder with:
 
 ```sh
-python3 -m http.server 8080
-# Or: php -S localhost:8080
+python3 -m http.server 8383
+# Or: php -S localhost:8383
 ```
 
 ## Notes
 
-- Function `free` is a no-op. Allocator is a growing arena.
-- Function `printf` prints only the format string.
-- Things like `pthread`, `env`, and `scanf` are stubs.
+- Function `free` is a no-op. The allocator is a growing arena.
+- Functions like `printf` print only the format string.
+- Functions like `atoi` parse nothing and return 0.
+- Every stdio path uses fd 1 (stdout).
+- Things like `pthread`, `env`, `scanf`, `localtime_r` are stubs.
 - Math functions use simple implementations.
+- D `real` is emulated with `double` precision.
