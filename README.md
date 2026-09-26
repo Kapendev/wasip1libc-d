@@ -25,7 +25,7 @@ To test the Wasm file, serve the folder with:
 # Or: .\serve.bat localhost:8383
 ```
 
-And go to: http://localhost:8383/index.html
+And open: http://localhost:8383/index.html
 
 ## Notes
 
