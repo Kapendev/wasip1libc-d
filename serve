@@ -1,0 +1,4 @@
+#!/bin/env sh
+
+cd "$(dirname "$0")"
+ldc2 -i -I=server -run server/app.d --listen "$1"

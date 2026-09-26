@@ -15,15 +15,17 @@ To install wasip1libc and build a Wasm file, run:
 git clone --depth 1 https://github.com/Kapendev/wasip1libc-d
 cd wasip1libc-d
 ./build
-# Or: ./build -betterc
+# Or: .\build.bat
 ```
 
 To test the Wasm file, serve the folder with:
 
 ```sh
-python3 -m http.server 8383
-# Or: php -S localhost:8383
+./serve localhost:8383
+# Or: .\serve.bat localhost:8383
 ```
+
+And go to: http://localhost:8383/index.html
 
 ## Notes
 
