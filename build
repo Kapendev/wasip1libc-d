@@ -3,6 +3,7 @@
 # --- Available Flags
 betterc='F' # Use the `-betterC` flag.
 libc='F'    # Use wasi-libc instead of the wasip1libc module.
+test='F'    # Use the "examples/index_test.d" file.
 
 
 set -eu
@@ -10,8 +11,9 @@ cd "$(dirname "$0")"
 for arg in "$@"; do
     [ "$arg" = '-betterc' ] && betterc='T' && continue
     [ "$arg" = '-libc' ] && libc='T' && continue
+    [ "$arg" = '-test' ] && test='T' && continue
 
-    flag_count=3
+    flag_count=4
     tail -n +3 "$0" | head -n $flag_count
     exit 1
 done
@@ -19,7 +21,11 @@ done
 dflags='-i --d-version=WASI_EMULATED_MMAN --d-version=WASI_EMULATED_SIGNAL'
 [ "$betterc" = 'T' ] && dflags="$dflags -betterC"
 
-if [ "$libc" = 'T' ]; then
+if [ "$test" = 'T' ]; then
+    echo 'Building test build.'
+    ldc2 --mtriple=wasm32-wasip1 -c wasip1libc.d
+    ldc2 --mtriple=wasm32-wasip1 -link-internally examples/index_test.d wasip1libc.o --of=index.wasm
+elif [ "$libc" = 'T' ]; then
     ldc2 --mtriple=wasm32-wasip1 $dflags index.d
 else
     ldc2 --mtriple=wasm32-wasip1 $dflags -c wasip1libc.d
