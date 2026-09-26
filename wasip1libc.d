@@ -10,7 +10,6 @@ extern(C) __gshared {
 }
 
 // No idea why I'm adding attributes, but it is what it is.
-// They do nothing here. Think about it. Think.
 extern(C) @trusted nothrow @nogc {
     alias QsortCompFunc = int function(const(void)* a, const(void)* b);
 }
@@ -20,6 +19,41 @@ alias pthread_mutex_t     = void*;
 alias pthread_cond_t      = void*;
 alias pthread_mutexattr_t = void*;
 alias pthread_condattr_t  = void*;
+
+alias sighandler_t = void function(int);
+alias sigset_t     = ulong;
+
+enum SIG_ERR = cast(sighandler_t) -1;
+enum SIG_DFL = cast(sighandler_t) 0;
+enum SIG_IGN = cast(sighandler_t) 1;
+enum SIGHUP  = 1;
+enum SIGINT  = 2;
+enum SIGQUIT = 3;
+enum SIGILL  = 4;
+enum SIGTRAP = 5;
+enum SIGABRT = 6;
+enum SIGBUS  = 7;
+enum SIGFPE  = 8;
+enum SIGKILL = 9;
+enum SIGUSR1 = 10;
+enum SIGSEGV = 11;
+enum SIGUSR2 = 12;
+enum SIGPIPE = 13;
+enum SIGALRM = 14;
+enum SIGTERM = 15;
+enum SIGCHLD = 17;
+enum SIGCONT = 18;
+enum SIGSTOP = 19;
+enum SIGTSTP = 20;
+
+enum SIG_BLOCK   = 0;
+enum SIG_UNBLOCK = 1;
+enum SIG_SETMASK = 2;
+
+enum MAP_ANON = 32;
+enum ENODEV   = 43;
+enum ENOMEM   = 48;
+enum EINVAL   = 28;
 
 // They are 32 bits on wasm32 and 64 bits on wasm64.
 alias CLong  = ptrdiff_t;
@@ -194,6 +228,16 @@ struct timespec {
 
 struct tm {
     int tm_sec, tm_min, tm_hour, tm_mday, tm_mon, tm_year, tm_wday, tm_yday, tm_isdst;
+}
+
+struct siginfo_t {
+    int si_signo, si_code, si_errno;
+}
+
+struct sigaction_t {
+    sighandler_t sa_handler;
+    sigset_t sa_mask;
+    int sa_flags;
 }
 
 struct FILE;
@@ -474,11 +518,6 @@ void* realloc(void* ptr, size_t size) {
 void free(void* ptr) {}
 
 void* mmap(void* addr, size_t length, int prot, int flags, int fd, long offset) {
-    enum MAP_ANON = 32;
-    enum ENODEV = 43;
-    enum ENOMEM = 48;
-    enum EINVAL = 28;
-
     if (length == 0) { errno = EINVAL; return cast(void*) -1; }
     if (fd != -1 || (flags & MAP_ANON) == 0) { errno = ENODEV; return cast(void*) -1; }
 
@@ -782,7 +821,57 @@ pthread_t pthread_self() {
     return 1;
 }
 
+int pthread_sigmask(int how, const(sigset_t)* set, sigset_t* oldset) {
+    return 0;
+}
+
+int pthread_kill(pthread_t thread, int sig) {
+    return 0;
+}
+
 int sched_yield() {
+    return 0;
+}
+
+sighandler_t signal(int sig, sighandler_t handler) {
+    return SIG_DFL;
+}
+
+int raise(int sig) {
+    return 0;
+}
+
+int kill(int pid, int sig) {
+    return 0;
+}
+
+int sigaction(int sig, const(sigaction_t)* act, sigaction_t* oldact) {
+    return 0;
+}
+
+int sigemptyset(sigset_t* set) {
+    if (set) *set = 0;
+    return 0;
+}
+
+int sigfillset(sigset_t* set) {
+    if (set) *set = ~cast(sigset_t) 0;
+    return 0;
+}
+
+int sigaddset(sigset_t* set, int sig) {
+    return 0;
+}
+
+int sigdelset(sigset_t* set, int sig) {
+    return 0;
+}
+
+int sigismember(const(sigset_t)* set, int sig) {
+    return 0;
+}
+
+int sigprocmask(int how, const(sigset_t)* set, sigset_t* oldset) {
     return 0;
 }
 

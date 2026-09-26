@@ -31,6 +31,6 @@ python3 -m http.server 8383
 - Functions like `printf` print only the format string.
 - Functions like `atoi` parse nothing and return 0.
 - Every stdio path uses fd 1 (stdout).
-- Things like `pthread`, `env`, `scanf`, `localtime_r` are stubs.
+- Things like `pthread`, `signal`, `env`, `scanf`, `localtime_r` are stubs.
 - Math functions use simple implementations.
 - D `real` is emulated with `double` precision.
