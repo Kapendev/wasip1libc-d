@@ -84,7 +84,7 @@ enum M_SQRT1_2  = 0.70710678118654752440084436210484904;
 
 // LLVM copy-pasta.
 private {
-    version (LDC) {
+    version (WebAssembly) {
         import ldc = ldc.attributes;
         import ldcn = ldc.intrinsics;
 
