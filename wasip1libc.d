@@ -10,7 +10,7 @@ extern(C) __gshared {
 }
 
 // No idea why I'm adding attributes, but it is what it is.
-extern(C) @trusted nothrow @nogc {
+extern(C) @system nothrow @nogc {
     alias QsortCompFunc = int function(const(void)* a, const(void)* b);
 }
 
