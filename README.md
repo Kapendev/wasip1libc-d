@@ -21,11 +21,9 @@ cd wasip1libc-d
 To test the Wasm file, serve the folder with:
 
 ```sh
-./serve localhost:8383
-# Or: .\serve.bat localhost:8383
+./serve
+# Or: .\serve.bat
 ```
-
-And open: http://localhost:8383/index.html
 
 ## Notes
 
