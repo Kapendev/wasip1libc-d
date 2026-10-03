@@ -1,5 +1,7 @@
 #!/bin/env sh
 
+port='8383'
+[ ! "$1" = '' ] && port="$1"
 cd "$(dirname "$0")"
-echo "Open: http://$1/index.html"
-ldc2 -i -I=server -run server/app.d --listen "$1"
+echo "Open: http://localhost:$port/index.html"
+ldc2 -i -I=server -run server/app.d --listen "localhost:$port"
