@@ -603,6 +603,13 @@ void exit(int status) {
     proc_exit(status);
 }
 
+void __assert_fail(const(char)* expr, const(char)* file, uint line, const(char)* func) {
+    write(fdstderr, "Assertion failed: ".ptr, 18);
+    write(fdstderr, expr, expr.strlen);
+    write(fdstderr, "\n".ptr, 1);
+    abort();
+}
+
 int isspace(int c) {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f';
 }
